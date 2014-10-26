@@ -18,19 +18,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VTrack.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="againparamids.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="againsimple.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="again.h">
@@ -45,15 +33,18 @@
     <ClInclude Include="againeditor.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VTrack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VTrack.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="againsimple.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="again.cpp">
