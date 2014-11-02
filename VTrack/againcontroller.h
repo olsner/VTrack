@@ -58,6 +58,7 @@ public:
 //------------------------------------------------------------------------
 	static FUnknown* createInstance (void* context)
 	{
+		HERE;
 		return (IEditController*)new AGainController;
 	}
 

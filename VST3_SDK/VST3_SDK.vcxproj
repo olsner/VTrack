@@ -253,6 +253,7 @@
     <ClInclude Include="..\..\..\..\..\..\..\VST3_SDK\public.sdk\source\vst\vstpresetfile.h" />
     <ClInclude Include="..\..\..\..\..\..\..\VST3_SDK\public.sdk\source\vst\vstrepresentation.h" />
     <ClInclude Include="..\..\..\..\..\..\..\VST3_SDK\public.sdk\source\vst\vstsinglecomponenteffect.h" />
+    <ClInclude Include="..\..\..\VST3_SDK\pluginterfaces\vst\ivstparameterchanges.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

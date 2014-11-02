@@ -35,15 +35,18 @@
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
+#include "stdafx.h"
+
+#if 0
+
 #include "again.h"	// for AGain
 #include "againcontroller.h" // for AGainController
 #include "againcids.h"	// for class ids
-#include "version.h"	// for versioning
+#include "vtrack.h"
 
 #include "public.sdk/source/main/pluginfactoryvst3.h"
 
-#define stringPluginName "AGain VST3"
-#define stringPluginSideChainName "AGain SideChain VST3"
+#define stringPluginName "VTrack"
 
 //------------------------------------------------------------------------
 //  Module init/exit
@@ -72,16 +75,16 @@ using namespace Steinberg::Vst;
 // GetPluginFactory function!
 //------------------------------------------------------------------------
 
-BEGIN_FACTORY_DEF ("Steinberg Media Technologies", 
-			   "http://www.steinberg.net", 
-			   "mailto:info@steinberg.de")
+BEGIN_FACTORY_DEF ("VTrack", 
+			   "http://vtrack.olsner.se", 
+			   "mailto:olsner@gmail.com")
 
 	//---First Plug-in included in this factory-------
 	// its kVstAudioEffectClass component
 	DEF_CLASS2 (INLINE_UID_FROM_FUID(AGainProcessorUID),
 				PClassInfo::kManyInstances,	// cardinality  
 				kVstAudioEffectClass,		// the component category (dont changed this)
-				stringPluginName,			// here the Plug-in name (to be changed)
+				"AGain VST3",			// here the Plug-in name (to be changed)
 				Vst::kDistributable,	// means that component and controller could be distributed on different computers
 				"Fx",					// Subcategory for this Plug-in (to be changed)
 				FULL_VERSION_STR,		// Plug-in version (to be changed)
@@ -92,13 +95,13 @@ BEGIN_FACTORY_DEF ("Steinberg Media Technologies",
 	DEF_CLASS2 (INLINE_UID_FROM_FUID (AGainControllerUID),
 				PClassInfo::kManyInstances,  // cardinality   
 				kVstComponentControllerClass,// the Controller category (dont changed this)
-				stringPluginName "Controller",	// controller name (could be the same than component name)
+				"AGain VST3" "Controller",	// controller name (could be the same than component name)
 				0,						// not used here
 				"",						// not used here
 				FULL_VERSION_STR,		// Plug-in version (to be changed)
 				kVstVersionString,		// the VST 3 SDK version (dont changed this, use always this define)
 				Steinberg::Vst::AGainController::createInstance)// function pointer called when this component should be instanciated
 
-	//----for others Plug-ins contained in this factory, put like for the first Plug-in different DEF_CLASS2---
-
 END_FACTORY
+
+#endif

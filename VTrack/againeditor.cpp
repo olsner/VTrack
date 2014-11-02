@@ -35,6 +35,8 @@
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
+#include "stdafx.h"
+
 #include "againeditor.h"
 #include "againcontroller.h"
 #include "againparamids.h"

@@ -35,6 +35,8 @@
 // OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
+#include "stdafx.h"
+
 #include "again.h"
 #include "againparamids.h"
 #include "againcids.h"	// for class ids
