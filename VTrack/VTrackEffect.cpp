@@ -23,6 +23,8 @@ using std::cerr;
 // Minimum value to consider a sound, or maximum to be considered silent.
 #define NOISE_FLOOR 0.0000001
 
+static const double kSemiTone = exp2(1 / 12);
+
 template <typename T, typename U>
 void set_bit(T& dst, const U& bit, bool value) {
 	if (value) {
@@ -325,6 +327,7 @@ struct VTrackEffect : public AudioEffect {
 		input_channels[0].latch_trig_oneshots[0] = true;
 		SampleTrig &t = tracks[0].sample_trigs[0];
 		t.flags = kSampleStack | kSampleEnable;
+		t.rate = pow(kSemiTone, 5);
 		t.stack = 0;
 	}
 
