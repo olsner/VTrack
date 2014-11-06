@@ -14,7 +14,10 @@ using std::cerr;
 #define NUM_INPUTS 4
 #define NUM_OUTPUTS 4
 #define NUM_TRACKS 8
-#define PATTERN_LENGTH 16
+#define PATTERN_SCALE 16 // 16 = 16th notes
+#define TRIGS_PER_QN (PATTERN_SCALE / 4)
+#define PATTERN_LENGTH_QN 4
+#define PATTERN_LENGTH (PATTERN_LENGTH_QN * TRIGS_PER_QN)
 #define MAX_STACK_SIZE 16 // room for 256 in sample index though
 
 template <typename T, typename U>
@@ -358,9 +361,13 @@ struct VTrackEffect : public AudioEffect {
 		return 60 * SAMPLE_RATE / tempo;
 	}
 
+	double samples_per_trig() {
+		return samples_per_qn() / TRIGS_PER_QN;
+	}
+
 	void update_sample_buffers() {
-		// "bar"/"pattern" confusion here - but it's one pattern/4 bars/16 qns that I mean :)
-		size_t samplesPerBar = ceil(samples_per_qn() * PATTERN_LENGTH);
+		// "bar"/"pattern" confusion here - but for now, one bar == one pattern
+		size_t samplesPerBar = ceil(samples_per_qn() * PATTERN_LENGTH_QN);
 		if (samplesPerBar != input_channels[0].sampler.length) {
 			Debug("Tempo changed to %.1f BPM, %lu samples/bar\n", tempo, samplesPerBar);
 		}
@@ -426,7 +433,7 @@ struct VTrackEffect : public AudioEffect {
 
 	void process_trigs(ProcessData& data, TQuarterNotes time, int32 sampleOffset) {
 		IEventList *output = data.outputEvents;
-		int trig = fmod(time, PATTERN_LENGTH);
+		int trig = fmod(time, PATTERN_LENGTH_QN) * TRIGS_PER_QN;
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			Track& track = tracks[i];
 			Event e;
@@ -456,7 +463,7 @@ struct VTrackEffect : public AudioEffect {
 				if (sample.flags & kSampleStack) {
 					uint8 input = sample.stack / MAX_STACK_SIZE;
 					uint8 stack = sample.stack % MAX_STACK_SIZE;
-					Debug("Sample stack trig %d: input %d/stack %d rate %.1fs\n", trig, input, stack, sample.rate);
+					Debug("Sample trig %d @%.1f: input %d/stack %d rate %.1fs\n", trig, time, input, stack, sample.rate);
 					// TODO Move the sample stack from InputChannel to Track, let Latch trigs include source channel.
 					if (input >= NUM_INPUTS) {
 						Debug("Invalid input %d >= %d\n", input, NUM_INPUTS);
@@ -480,9 +487,9 @@ struct VTrackEffect : public AudioEffect {
 				if (!chan.armed) continue;
 				chan.armed = false;
 			}
-			Debug("Latch input channel %d, oneshot=%d\n", i, chan.latch_trig_oneshots[trig]);
+			Debug("Latch trig %d @%.1f: input channel %d, oneshot=%d\n", trig, time, i, chan.latch_trig_oneshots[trig]);
 			chan.latch();
-			Debug("Channel %d: now %u stacked\n", i, (unsigned)chan.sample_stack.size());
+			//Debug("Channel %d: now %u stacked\n", i, (unsigned)chan.sample_stack.size());
 		}
 	}
 
@@ -502,12 +509,12 @@ struct VTrackEffect : public AudioEffect {
 		TQuarterNotes musicTime = positionInPattern;
 		while (sample_position < data.numSamples) {
 			int32 next_event = process_events(data, sample_position);
-			int32 next_qn = get_next_qn(musicTime, sample_position);
-			if (next_qn == sample_position) {
+			int32 next_trig = get_next_trig(musicTime, sample_position);
+			if (next_trig == sample_position) {
 				process_trigs(data, musicTime, sample_position);
-				next_qn += samples_per_qn();
+				next_trig += samples_per_trig();
 			}
-			int32 next_sample_pos = min(data.numSamples, next_qn);
+			int32 next_sample_pos = min(data.numSamples, next_trig);
 			if (next_event >= 0) {
 				next_sample_pos = min(next_sample_pos, next_event);
 			}
@@ -518,7 +525,7 @@ struct VTrackEffect : public AudioEffect {
 			}
 
 			musicTime += num_samples / samples_per_qn();
-			if (musicTime > PATTERN_LENGTH) musicTime -= PATTERN_LENGTH;
+			if (musicTime > PATTERN_LENGTH_QN) musicTime -= PATTERN_LENGTH_QN;
 			sample_position = next_sample_pos;
 		}
 		positionInPattern = musicTime;
@@ -540,6 +547,11 @@ struct VTrackEffect : public AudioEffect {
 		return kResultOk;
 	}
 
+	int32 get_next_trig(TQuarterNotes qn, int32 samples) {
+		TQuarterNotes next_trig_qn = ceil(qn * TRIGS_PER_QN) / TRIGS_PER_QN;
+		return samples + (next_trig_qn - qn) * samples_per_qn();
+	}
+
 	int32 get_next_qn(TQuarterNotes qn, int32 samples) {
 		TQuarterNotes next_qn = ceil(qn);
 		return samples + (next_qn - qn) * samples_per_qn();
@@ -547,7 +559,7 @@ struct VTrackEffect : public AudioEffect {
 
 	void set_position(TQuarterNotes barPosition, TQuarterNotes projectTime) {
 		// Last bar was at (project time) barPosition. We don't really care here but just use the project time directly.
-		positionInPattern = fmod(projectTime, PATTERN_LENGTH);
+		positionInPattern = fmod(projectTime, PATTERN_LENGTH_QN);
 	}
 
 	void update_context(ProcessContext* ctx) {
