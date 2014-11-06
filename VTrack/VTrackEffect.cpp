@@ -465,6 +465,8 @@ struct VTrackEffect : public AudioEffect {
 	}
 
 	void process_trigs(ProcessData& data, TQuarterNotes time, int32 sampleOffset) {
+		if (!playing) return;
+
 		IEventList *output = data.outputEvents;
 		int trig = fmod(time, PATTERN_LENGTH_QN) * TRIGS_PER_QN;
 		for (int i = 0; i < NUM_TRACKS; i++) {
