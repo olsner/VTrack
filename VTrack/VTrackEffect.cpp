@@ -20,6 +20,9 @@ using std::cerr;
 #define PATTERN_LENGTH (PATTERN_LENGTH_QN * TRIGS_PER_QN)
 #define MAX_STACK_SIZE 16 // room for 256 in sample index though
 
+// Minimum value to consider a sound, or maximum to be considered silent.
+#define NOISE_FLOOR 0.0000001
+
 template <typename T, typename U>
 void set_bit(T& dst, const U& bit, bool value) {
 	if (value) {
@@ -118,15 +121,18 @@ struct Playback {
 	shared_ptr<DumbBuffer> source;
 	double rate;
 	double position;
+	double level;
 
-	Playback() : rate(0), position(0) {}
+	Playback() : rate(0), position(0), level(1.0) {}
 
-	bool fill(float *const dst, const int32 channel, const int32 count, double level) const {
+	bool fill(float *const dst, const int32 channel, const int32 count, const double trackLevel) const {
 		double p = position;
 		bool sound = false;
 		assert(source);
+		double f = level * trackLevel;
 		for (int32 i = 0; i < count; i++) {
-			if (dst[i] = source->safe_get(p) * level) {
+			float s = (dst[i] += source->safe_get(p) * f);
+			if (s > NOISE_FLOOR) {
 				sound = true;
 			}
 			p += rate;
@@ -639,7 +645,7 @@ struct VTrackEffect : public AudioEffect {
 		AudioBusBuffers &outp = data.outputs[0];
 		for (int i = 0; i < NUM_TRACKS; i++) {
 			Playback& playback = tracks[i].playback;
-			if (!playback.rate) continue;
+			if (!playback.rate || !playback.level || !tracks[i].level) continue;
 
 			for (int32 c = 0; c < 2; c++) {
 				float *dst = outp.channelBuffers32[c] + offset;
