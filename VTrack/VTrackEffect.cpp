@@ -235,6 +235,8 @@ struct SampleBuffer {
 	}
 
 	void add_samples(const float *input, size_t n) {
+		if (!length) return;
+
 		while (n--) {
 			buffer[position++] = *input++;
 			if (position == length) position = 0;
@@ -250,10 +252,6 @@ typedef std::deque<shared_ptr<DumbBuffer>> SampleStack;
 
 struct InputChannel
 {
-	void set_length(const size_t new_length) {
-		sampler.set_length(new_length);
-	}
-
 	InputChannel() : armed(false) {
 		std::fill_n(latch_trigs, PATTERN_LENGTH, false);
 		std::fill_n(latch_trig_oneshots, PATTERN_LENGTH, false);
@@ -275,6 +273,15 @@ struct InputChannel
 	void disarm() {
 		armed = false;
 	}
+
+	void set_length(const size_t new_length) {
+		sampler.set_length(new_length);
+	}
+
+	void add_samples(const float *src, size_t count) {
+		sampler.add_samples(src, count);
+	}
+
 
 	void latch() {
 		sample_stack.push_front(sampler.latch());
@@ -308,6 +315,8 @@ struct VTrackEffect : public AudioEffect {
 	Track tracks[NUM_TRACKS];
 	// 4 input channels
 	InputChannel input_channels[NUM_INPUTS];
+	// Self samplers
+	SampleBuffer output_samplers[NUM_OUTPUTS];
 
 	double tempo;
 	// pattern = 4 bars, 16 QNs, used when we don't receive any better position info
@@ -382,6 +391,9 @@ struct VTrackEffect : public AudioEffect {
 		}
 		for (int i = 0; i < NUM_INPUTS; i++) {
 			input_channels[i].set_length(samplesPerBar);
+		}
+		for (int i = 0; i < NUM_OUTPUTS; i++) {
+			output_samplers[i].set_length(samplesPerBar);
 		}
 	}
 
@@ -513,7 +525,7 @@ struct VTrackEffect : public AudioEffect {
 			update_context(data.processContext);
 		}
 		copy_events(data);
-		reset_silence(data.outputs, data.numOutputs);
+		reset_silence(data.outputs, data.numOutputs, data.numSamples);
 		int32 sample_position = 0;
 		TQuarterNotes musicTime = positionInPattern;
 		while (sample_position < data.numSamples) {
@@ -615,14 +627,17 @@ struct VTrackEffect : public AudioEffect {
 		return -1;
 	}
 
-	void reset_silence(AudioBusBuffers* outputs, int32 numOutputs) {
+	void reset_silence(AudioBusBuffers* outputs, int32 numOutputs, int32 numSamples) {
 		for (int32 bus = 0; bus < numOutputs; bus++) {
-			reset_silence(outputs[bus]);
+			reset_silence(outputs[bus], numSamples);
 		}
 	}
 
-	void reset_silence(AudioBusBuffers& output) {
+	void reset_silence(AudioBusBuffers& output, const int32 numSamples) {
 		output.silenceFlags = (1 << output.numChannels) - 1;
+		for (int32 c = 0; c < output.numChannels; c++) {
+			memset(output.channelBuffers32[c], 0, numSamples * sizeof(float));
+		}
 	}
 
 	float get_vu(AudioBusBuffers *buses, size_t numBuses, size_t numSamples) {
@@ -642,6 +657,7 @@ struct VTrackEffect : public AudioEffect {
 	void process(ProcessData& data, const int32 offset, const int32 count) {
 		process_inputs(data, offset, count);
 		process_samples(data, offset, count);
+		process_outputs(data, offset, count);
 	}
 
 	void process_samples(ProcessData& data, const int32 offset, const int32 count) {
@@ -673,8 +689,8 @@ struct VTrackEffect : public AudioEffect {
 			assert(outp.numChannels == 2);
 			for (int32 c = 0; c < inp.numChannels; c++) {
 				InputChannel& chan = input_channels[input_channel_index];
-				chan.sampler.add_samples(src, count);
 				const float *const src = inp.channelBuffers32[c] + offset;
+				chan.add_samples(src, count);
 				for (int32 outc = 0; outc < 2; outc++) {
 					float *const dst = outp.channelBuffers32[outc] + offset;
 					bool silent = !!(inp.silenceFlags & (1ull << c));
@@ -697,6 +713,17 @@ struct VTrackEffect : public AudioEffect {
 					}
 				}
 				input_channel_index++;
+			}
+		}
+	}
+
+	void process_outputs(ProcessData& data, const int32 offset, const int32 count) {
+		assert(data.numOutputs >= 1);
+		size_t output_channel_index = 0;
+		for (int32 bus = 0; bus < data.numOutputs; bus++) {
+			AudioBusBuffers &outp = data.outputs[bus];
+			for (int32 c = 0; c < outp.numChannels; c++) {
+				output_samplers[output_channel_index++].add_samples(outp.channelBuffers32[c] + offset, count);
 			}
 		}
 	}
