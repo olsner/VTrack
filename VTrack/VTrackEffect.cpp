@@ -323,7 +323,9 @@ struct VTrackEffect : public AudioEffect {
 	TQuarterNotes positionInPattern;
 	float last_vu;
 
-	VTrackEffect() : tempo(0), positionInPattern(0) {
+	bool playing, recording;
+
+	VTrackEffect() : tempo(0), positionInPattern(0), last_vu(0), playing(false), recording(false) {
 		setControllerClass(VTrackControllerUID);
 		set_tempo(120);
 		for (int i = 0; i < NUM_INPUTS; i++) {
@@ -590,6 +592,8 @@ struct VTrackEffect : public AudioEffect {
 		if (hasState(ctx, ProcessContext::kTempoValid)) {
 			set_tempo(ctx->tempo);
 		}
+		playing = hasState(ctx, ProcessContext::kPlaying);
+		recording = hasState(ctx, ProcessContext::kRecording);
 	}
 
 	void copy_events(ProcessData& data) {
