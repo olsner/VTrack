@@ -97,7 +97,10 @@ struct DumbBuffer {
 	DumbBuffer(const DumbBuffer&) = delete;
 	DumbBuffer& operator=(const DumbBuffer&) = delete;
 	DumbBuffer(const float *buffer, size_t length) : buffer(buffer), length(length) {}
-	~DumbBuffer() { delete[] buffer; }
+	~DumbBuffer() {
+		HERE;
+		delete[] buffer;
+	}
 
 	static shared_ptr<DumbBuffer> copy_circular(const float *source, size_t position, size_t length) {
 		float *output = new float[length];
@@ -198,6 +201,7 @@ struct SampleBuffer {
 
 	SampleBuffer() : buffer(NULL), position(0), length(0) {}
 	~SampleBuffer() {
+		HERE;
 		delete[] buffer;
 		buffer = NULL;
 		position = length = 0;
@@ -257,6 +261,9 @@ struct InputChannel
 		std::fill_n(latch_trig_oneshots, PATTERN_LENGTH, false);
 		std::fill_n(direct, NUM_OUTPUTS, 0.0f);
 	}
+	~InputChannel() {
+		HERE;
+	}
 	
 	SampleBuffer sampler;
 	SampleStack sample_stack;
@@ -300,6 +307,9 @@ struct Track {
 	bool armed;
 
 	Track() : level(1.0), armed(false) {}
+	~Track() {
+		HERE;
+	}
 
 	void arm() {
 		armed = true;
