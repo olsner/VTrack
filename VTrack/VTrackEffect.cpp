@@ -23,7 +23,7 @@ using std::cerr;
 // Minimum value to consider a sound, or maximum to be considered silent.
 #define NOISE_FLOOR 0.0000001
 
-static const double kSemiTone = exp2(1 / 12);
+static const double kSemiTone = exp2(1.0 / 12);
 
 template <typename T, typename U>
 void set_bit(T& dst, const U& bit, bool value) {
@@ -113,8 +113,8 @@ struct DumbBuffer {
 		return res;
 	}
 
-	float safe_get(double position) {
-		size_t p = position;
+	float safe_get(double position, bool loop) {
+		size_t p = loop ? fmod(position, length) : position;
 		if (p < 0 || p >= length) {
 			return 0;
 		}
@@ -127,8 +127,9 @@ struct Playback {
 	double rate;
 	double position;
 	double level;
+	bool loop;
 
-	Playback() : rate(0), position(0), level(1.0) {}
+	Playback() : rate(0), position(0), level(1.0), loop(false) {}
 
 	bool fill(float *const dst, const int32 channel, const int32 count, const double trackLevel) const {
 		double p = position;
@@ -136,7 +137,7 @@ struct Playback {
 		assert(source);
 		double f = level * trackLevel;
 		for (int32 i = 0; i < count; i++) {
-			float s = (dst[i] += source->safe_get(p) * f);
+			float s = (dst[i] += source->safe_get(p, loop) * f);
 			if (s > NOISE_FLOOR) {
 				sound = true;
 			}
@@ -145,19 +146,22 @@ struct Playback {
 		return sound;
 	}
 
-	void advance(double time) {
-		position += time;
-		if (position > source->length) {
-			position = 0;
+	// Returns true if finished.
+	bool advance(const int32 count) {
+		position += rate * count;
+		if (loop) {
+			position = fmod(position, source->length);
+		} else if (position > source->length) {
 			rate = 0;
+			return true;
 		}
+		return false;
 	}
 };
 
 enum SampleTrigFlags {
 	kSampleEnable = kTrigEnable,
 	kSampleStack = 1 << 1,
-	//kSampleOneShot = 1 << 2,
 };
 struct SampleTrig {
 	uint8 flags;
@@ -169,8 +173,9 @@ struct SampleTrig {
 	};
 	// compared to original rate in sample, for now a stupid pitching thing, no interpolation
 	double rate;
+	double level;
 
-	SampleTrig() : flags(0), stack(0), rate(1.0) {}
+	SampleTrig() : flags(0), stack(0), rate(1.0), level(1.0) {}
 
 	bool enabled() const {
 		return !!(flags & kSampleEnable);
@@ -191,6 +196,45 @@ struct SampleTrig {
 			sample = int_param(value, 255);
 			break;
 		// case kParamSampleTrigRate:
+		// case kParamSampleTrigLevel:
+		}
+	}
+};
+
+enum LatchTrigFlags {
+	kLatchEnable = kTrigEnable,
+	kLatchOneShot = 1 << 1,
+};
+
+struct LatchTrig {
+	uint8 flags;
+	uint8 source;
+	uint8 sample;
+
+	LatchTrig() : flags(0), source(0), sample(0) {}
+
+	bool enabled() const {
+		return !!(flags & kLatchEnable);
+	}
+
+	bool oneshot() const {
+		return !!(flags & kLatchOneShot);
+	}
+
+	void set_param(uint8 type, double value) {
+		switch (type) {
+		case kParamLatchTrigEnable:
+			set_bit(flags, kLatchEnable, value > 0.5);
+			break;
+		case kParamLatchTrigOneShot:
+			set_bit(flags, kLatchOneShot, value > 0.5);
+			break;
+		case kParamLatchTrigSampleNumber:
+			sample = int_param(value, 255);
+			break;
+		case kParamLatchTrigSource:
+			source = int_param(value, 255);
+			break;
 		}
 	}
 };
@@ -256,9 +300,7 @@ typedef std::deque<shared_ptr<DumbBuffer>> SampleStack;
 
 struct InputChannel
 {
-	InputChannel() : armed(false) {
-		std::fill_n(latch_trigs, PATTERN_LENGTH, false);
-		std::fill_n(latch_trig_oneshots, PATTERN_LENGTH, false);
+	InputChannel() {
 		std::fill_n(direct, NUM_OUTPUTS, 0.0f);
 	}
 	~InputChannel() {
@@ -266,20 +308,7 @@ struct InputChannel
 	}
 	
 	SampleBuffer sampler;
-	SampleStack sample_stack;
 	float direct[NUM_OUTPUTS];
-	// Simple: true to latch the last 4 bars and push them onto the sample stack
-	bool latch_trigs[PATTERN_LENGTH];
-	bool latch_trig_oneshots[PATTERN_LENGTH];
-	bool armed;
-
-	void arm() {
-		armed = true;
-		// Maybe: set arm flag for each trigger.
-	}
-	void disarm() {
-		armed = false;
-	}
 
 	void set_length(const size_t new_length) {
 		sampler.set_length(new_length);
@@ -290,11 +319,8 @@ struct InputChannel
 	}
 
 
-	void latch() {
-		sample_stack.push_front(sampler.latch());
-		if (sample_stack.size() > MAX_STACK_SIZE) {
-			sample_stack.pop_back();
-		}
+	shared_ptr<DumbBuffer> latch() {
+		return sampler.latch();
 	}
 };
 
@@ -302,6 +328,7 @@ struct Track {
 	// 16 steps (for now)
 	MidiTrig midi_trigs[PATTERN_LENGTH];
 	SampleTrig sample_trigs[PATTERN_LENGTH];
+	LatchTrig latch_trigs[PATTERN_LENGTH];
 	Playback playback; // One playback per track, for now
 	double level;
 	bool armed;
@@ -327,6 +354,8 @@ struct VTrackEffect : public AudioEffect {
 	InputChannel input_channels[NUM_INPUTS];
 	// Self samplers
 	SampleBuffer output_samplers[NUM_OUTPUTS];
+	// Saved samples
+	vector<shared_ptr<DumbBuffer>> samples;
 
 	double tempo;
 	// pattern = 4 bars, 16 QNs, used when we don't receive any better position info
@@ -343,13 +372,18 @@ struct VTrackEffect : public AudioEffect {
 				input_channels[i].direct[o] = o < 2 ? 1 : 0;
 			}
 		}
+		samples.resize(256);
 
-		input_channels[0].latch_trigs[0] = true;
-		input_channels[0].latch_trig_oneshots[0] = true;
+		LatchTrig &latch = tracks[0].latch_trigs[0];
+		latch.flags = kLatchEnable;
+		//latch.flags |= kLatchOneShot;
+		latch.source = 0;
+		latch.sample = 0;
 		SampleTrig &t = tracks[0].sample_trigs[0];
-		t.flags = kSampleStack | kSampleEnable;
+		t.flags = kSampleEnable;
 		t.rate = pow(kSemiTone, 5);
-		t.stack = 0;
+		t.sample = 0;
+		t.level = 1;
 	}
 
 	tresult PLUGIN_API initialize(FUnknown *context) {
@@ -416,17 +450,12 @@ struct VTrackEffect : public AudioEffect {
 		if (id.track == 0xff || id.trig == 0xff) { // Wildcard changes not handled.
 			return;
 		}
-		bool bv = value > 0.5;
-		if (id.type == kParamLatchTrigEnable) {
-			input_channels[id.track].latch_trigs[id.trig] = bv;
-		} else if (id.type == kParamLatchTrigOneShot) {
-			input_channels[id.track].latch_trig_oneshots[id.trig] = bv;
+		if (id.latch_trig_related()) {
+			tracks[id.track].latch_trigs[id.trig].set_param(id.type, value);
 		} else if (id.midi_trig_related()) {
-			MidiTrig& trig = tracks[id.track].midi_trigs[id.trig];
-			trig.set_param(id.type, value);
+			tracks[id.track].midi_trigs[id.trig].set_param(id.type, value);
 		} else {
-			SampleTrig& trig = tracks[id.track].sample_trigs[id.trig];
-			trig.set_param(id.type, value);
+			tracks[id.track].sample_trigs[id.trig].set_param(id.type, value);
 		}
 	}
 
@@ -450,12 +479,12 @@ struct VTrackEffect : public AudioEffect {
 			assert(id.trig == 0xff); // Only support global trig arming for now
 			if (id.track == 0xff) {
 				for (int t = 0; t < NUM_TRACKS; t++) {
-					arm ? input_channels[t].arm() : input_channels[t].disarm();
+					arm ? tracks[t].arm() : tracks[t].disarm();
 				}
 			} else if (arm) {
-				input_channels[id.track].arm();
+				tracks[id.track].arm();
 			} else {
-				input_channels[id.track].disarm();
+				tracks[id.track].disarm();
 			}
 			break;
 		}
@@ -492,10 +521,21 @@ struct VTrackEffect : public AudioEffect {
 				e.noteOff.noteId = -1;
 				output->addEvent(e);
 			}
+			LatchTrig &latch = track.latch_trigs[trig];
+			if (latch.enabled() && (track.armed || !latch.oneshot())) {
+				track.armed = false;
+				// TODO: latch.armed = false?
+				Debug("Latch trig %d @%.1f: input channel %d, oneshot=%d\n", trig, time, latch.source, latch.oneshot());
+				// if (!(latch.flags & kLatchSampleOutput))
+				samples[latch.sample] = input_channels[latch.source].latch();
+				//Debug("Channel %d: now %u stacked\n", i, (unsigned)chan.sample_stack.size());
+			}
 			const SampleTrig& sample = track.sample_trigs[trig];
 			if (sample.enabled()) {
 				Playback& playback = track.playback;
 				if (sample.flags & kSampleStack) {
+					assert(!"stack samples not implemented anymore");
+#if 0
 					uint8 input = sample.stack / MAX_STACK_SIZE;
 					uint8 stack = sample.stack % MAX_STACK_SIZE;
 					Debug("Sample trig %d @%.1f: input %d/stack %d rate %.1fs\n", trig, time, input, stack, sample.rate);
@@ -510,21 +550,17 @@ struct VTrackEffect : public AudioEffect {
 						continue;
 					}
 					playback.source = sample_stack[stack];
+#endif
+				} else {
+					Debug("Sample trig %d @%.1f: sample %d rate=%.3fx level=%.1f\n", trig, time, sample.sample, sample.rate, sample.level);
+					playback.source = samples[sample.sample];
 				}
-				playback.rate = sample.rate;
-				playback.position = 0;
+				if (playback.source) {
+					playback.rate = sample.rate;
+					playback.level = sample.level;
+					playback.position = 0;
+				}
 			}
-		}
-		for (int i = 0; i < NUM_INPUTS; i++) {
-			InputChannel& chan = input_channels[i];
-			if (!chan.latch_trigs[trig]) continue;
-			if (chan.latch_trig_oneshots[trig]) {
-				if (!chan.armed) continue;
-				chan.armed = false;
-			}
-			Debug("Latch trig %d @%.1f: input channel %d, oneshot=%d\n", trig, time, i, chan.latch_trig_oneshots[trig]);
-			chan.latch();
-			//Debug("Channel %d: now %u stacked\n", i, (unsigned)chan.sample_stack.size());
 		}
 	}
 
@@ -541,6 +577,7 @@ struct VTrackEffect : public AudioEffect {
 		copy_events(data);
 		reset_silence(data.outputs, data.numOutputs, data.numSamples);
 		int32 sample_position = 0;
+		// TODO Use full song position here (it would work since we use fmod, but it will make debug printouts more useful, and give some insight into how song position and the host's sequencer works).
 		TQuarterNotes musicTime = positionInPattern;
 		while (sample_position < data.numSamples) {
 			int32 next_event = process_events(data, sample_position);
@@ -688,7 +725,9 @@ struct VTrackEffect : public AudioEffect {
 					outp.silenceFlags &= ~(1ull << c);
 				}
 			}
-			playback.advance(count);
+			if (playback.advance(count)) {
+				Debug("Playback finished on track %d\n", i);
+			}
 		}
 	}
 

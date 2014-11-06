@@ -22,7 +22,11 @@ struct ParamId {
 	}
 
 	bool midi_trig_related() const {
-		return (type & 0xc0) == 0xc0; // type >> 6 == 3?
+		return (type & 0xe0) == 0xc0;
+	}
+
+	bool latch_trig_related() const {
+		return (type & 0xe0) == 0xe0;
 	}
 
 	uint32_t encode() {
@@ -40,13 +44,19 @@ enum ParamIdType {
 	kParamLevel,
 
 	// Trig parameters - 128 and up, MIDI trig parameters - 192 and up.
-	kParamMidiTrigEnable = 192,
-	kParamMidiTrigNote,
-	kParamMidiTrigLength,
-	kParamSampleTrigEnable = 128,
+	kParamSampleTrigEnable = 0x80,
 	//kParamSampleTrigOneShot,
 	kParamSampleTrigStack,
 	kParamSampleTrigSampleNumber,
-	kParamLatchTrigEnable,
+	kParamSampleTrigRate,
+	kParamSampleTrigLevel,
+
+	kParamMidiTrigEnable = 0xc0,
+	kParamMidiTrigNote,
+	kParamMidiTrigLength,
+
+	kParamLatchTrigEnable = 0xe0,
 	kParamLatchTrigOneShot,
+	kParamLatchTrigSampleNumber,
+	kParamLatchTrigSource,
 };
