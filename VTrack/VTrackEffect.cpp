@@ -673,18 +673,20 @@ struct VTrackEffect : public AudioEffect {
 			assert(outp.numChannels == 2);
 			for (int32 c = 0; c < inp.numChannels; c++) {
 				InputChannel& chan = input_channels[input_channel_index];
-				float *src = inp.channelBuffers32[c] + offset;
 				chan.sampler.add_samples(src, count);
+				const float *const src = inp.channelBuffers32[c] + offset;
 				for (int32 outc = 0; outc < 2; outc++) {
-					float *dst = outp.channelBuffers32[outc] + offset;
+					float *const dst = outp.channelBuffers32[outc] + offset;
 					bool silent = !!(inp.silenceFlags & (1ull << c));
-					if (silent) {
-						memset(dst, 0, count * sizeof(float));
+					float f = chan.direct[outc];
+					if (silent || abs(f) <= NOISE_FLOOR) {
+						// count > 0, so max_element will return something.
+						silent = *std::max_element(dst, dst + count) > NOISE_FLOOR;
 					} else {
-						float f = chan.direct[outc];
 						silent = true;
-						for (int32 s = count; s--;) {
-							if (*dst++ = *src++ * f) {
+						for (int32 s = 0; s < count; s++) {
+							float val = (dst[s] += f * src[s]);
+							if (val > NOISE_FLOOR) {
 								silent = false;
 							}
 						}
