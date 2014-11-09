@@ -75,6 +75,12 @@
     <ClCompile Include="..\..\..\..\..\..\..\VST3_SDK\vstgui4\vstgui\vstgui_win32.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\VST3_SDK\vstgui4\vstgui\plugin-bindings\vst3editor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\VST3_SDK\vstgui4\vstgui\vstgui_uidescription_win32.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\..\..\VST3_SDK\public.sdk\source\common\memorystream.h">
