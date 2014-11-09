@@ -98,7 +98,6 @@ struct DumbBuffer {
 	DumbBuffer& operator=(const DumbBuffer&) = delete;
 	DumbBuffer(const float *buffer, size_t length) : buffer(buffer), length(length) {}
 	~DumbBuffer() {
-		HERE;
 		delete[] buffer;
 	}
 
@@ -245,7 +244,6 @@ struct SampleBuffer {
 
 	SampleBuffer() : buffer(NULL), position(0), length(0) {}
 	~SampleBuffer() {
-		HERE;
 		delete[] buffer;
 		buffer = NULL;
 		position = length = 0;
@@ -304,7 +302,6 @@ struct InputChannel
 		std::fill_n(direct, NUM_OUTPUTS, 0.0f);
 	}
 	~InputChannel() {
-		HERE;
 	}
 	
 	SampleBuffer sampler;
@@ -335,7 +332,6 @@ struct Track {
 
 	Track() : level(1.0), armed(false) {}
 	~Track() {
-		HERE;
 	}
 
 	void arm() {
