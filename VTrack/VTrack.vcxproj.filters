@@ -15,24 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="againparamids.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="again.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="againcids.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="againcontroller.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="againeditor.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -43,6 +25,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VTrackController.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="again.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="againcids.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="againcontroller.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="againeditor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="againparamids.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -73,13 +70,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="vtrack.def">
-      <Filter>Source Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="vtrack.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="vtrack.def">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

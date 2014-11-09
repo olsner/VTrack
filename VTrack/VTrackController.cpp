@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "VTrackController.h"
+#include "VTrackEffect.h"
 
 using namespace Steinberg;
 using namespace Steinberg::Vst;
