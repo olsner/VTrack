@@ -42,9 +42,6 @@
     <ClCompile Include="..\..\..\..\..\..\..\VST3_SDK\public.sdk\source\vst\vstrepresentation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\VST3_SDK\public.sdk\source\vst\vstsinglecomponenteffect.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\..\..\..\VST3_SDK\public.sdk\source\vst\vstaudioeffect.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -79,6 +76,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\VST3_SDK\vstgui4\vstgui\vstgui_uidescription_win32.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\VST3_SDK\public.sdk\source\vst\vsteditcontroller.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -138,6 +138,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\VST3_SDK\pluginterfaces\vst\ivstparameterchanges.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\VST3_SDK\vstgui4\vstgui\plugin-bindings\vst3editor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

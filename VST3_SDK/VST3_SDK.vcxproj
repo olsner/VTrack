@@ -236,8 +236,8 @@
     <ClCompile Include="..\..\..\..\..\..\..\VST3_SDK\public.sdk\source\vst\vstparameters.cpp" />
     <ClCompile Include="..\..\..\..\..\..\..\VST3_SDK\public.sdk\source\vst\vstpresetfile.cpp" />
     <ClCompile Include="..\..\..\..\..\..\..\VST3_SDK\public.sdk\source\vst\vstrepresentation.cpp" />
-    <ClCompile Include="..\..\..\..\..\..\..\VST3_SDK\public.sdk\source\vst\vstsinglecomponenteffect.cpp" />
     <ClCompile Include="..\..\..\..\..\..\..\VST3_SDK\vstgui4\vstgui\vstgui_win32.cpp" />
+    <ClCompile Include="..\..\..\VST3_SDK\public.sdk\source\vst\vsteditcontroller.cpp" />
     <ClCompile Include="..\..\..\VST3_SDK\vstgui4\vstgui\plugin-bindings\vst3editor.cpp" />
     <ClCompile Include="..\..\..\VST3_SDK\vstgui4\vstgui\vstgui_uidescription_win32.cpp" />
   </ItemGroup>
@@ -261,6 +261,7 @@
     <ClInclude Include="..\..\..\..\..\..\..\VST3_SDK\public.sdk\source\vst\vstrepresentation.h" />
     <ClInclude Include="..\..\..\..\..\..\..\VST3_SDK\public.sdk\source\vst\vstsinglecomponenteffect.h" />
     <ClInclude Include="..\..\..\VST3_SDK\pluginterfaces\vst\ivstparameterchanges.h" />
+    <ClInclude Include="..\..\..\VST3_SDK\vstgui4\vstgui\plugin-bindings\vst3editor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

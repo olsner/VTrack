@@ -27,7 +27,10 @@ using std::shared_ptr;
 #include "pluginterfaces/vst/ivstparameterchanges.h"
 #include "public.sdk/source/main/pluginfactoryvst3.h"
 #include "public.sdk/source/vst/vstaudioeffect.h"
+#include "public.sdk/source/vst/vsteditcontroller.h"
 #include "public.sdk/source/vst/hosting/eventlist.h"
+
+#include "vstgui4/vstgui/plugin-bindings/vst3editor.h"
 
 using Steinberg::FUnknown;
 using Steinberg::FUID;

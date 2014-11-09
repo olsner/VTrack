@@ -4,8 +4,8 @@
 #include "stdafx.h"
 #include "VTrack.h"
 #include "VTrackEffect.h"
+#include "VTrackController.h"
 
-#include "againcontroller.h" // for AGainController
 #include "againcids.h"
 
 #define stringPluginName "VTrack"
@@ -41,6 +41,6 @@ BEGIN_FACTORY_DEF("VTrack", "http://vtrack.olsner.se", "mailto:olsner@gmail.com"
 	VTrackControllerUID.print(0, FUID::UIDPrintStyle::kFUID);*/
 
 	MY_DEF_CLASS(AGainProcessorUID, kVstAudioEffectClass, "VTrack", createVTrackEffect);
-	MY_DEF_CLASS(VTrackControllerUID, kVstComponentControllerClass, "VTrackController", Steinberg::Vst::AGainController::createInstance/*TODO*/);
+	MY_DEF_CLASS(VTrackControllerUID, kVstComponentControllerClass, "VTrackController", createVTrackController);
 }
 END_FACTORY
