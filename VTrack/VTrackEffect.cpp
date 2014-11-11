@@ -689,7 +689,7 @@ struct VTrackEffect : public AudioEffect {
 		}
 	}
 
-	float get_vu(AudioBusBuffers *buses, size_t numBuses, size_t numSamples) {
+	float get_vu(AudioBusBuffers *buses, int32 numBuses, int32 numSamples) {
 		float vu = 0;
 		for (int32 bus = 0; bus < numBuses; bus++) {
 			AudioBusBuffers &outp = buses[bus];

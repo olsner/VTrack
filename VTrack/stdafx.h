@@ -40,7 +40,7 @@ using Steinberg::tresult;
 
 static void Debug(const char *fmt, ...) {
 	va_list ap, ap2;
-	va_start(ap, &fmt);
+	va_start(ap, fmt);
 	va_copy(ap2, ap);
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);

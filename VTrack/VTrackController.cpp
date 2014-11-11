@@ -14,7 +14,7 @@ public:
 	~VTrackController() {
 	}
 
-	virtual IPlugView* PLUGIN_API createView(FIDString name) override {
+	IPlugView* PLUGIN_API createView(FIDString name) override {
 		if (strcmp(name, "editor") == 0) {
 			return new VSTGUI::VST3Editor(this, "view", "vtrack.uidesc");
 		}
